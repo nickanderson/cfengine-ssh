@@ -38,7 +38,7 @@ FROM (SELECT variablevalue as value,
      AS sub where sub.count > 1 order by sub.count desc
 #+end_src
 
-[[images/inventory_duplicate_ssh_host_key_fingerprints_create_saved_reports.jpg]]
+[[images/inventory_duplicate_ssh_host_key_fingerprints_create_saved_report.jpg]]
 
 *** Alerts
 You can setup alerts based on the inventoried duplicate ssh host keys.

@@ -12,6 +12,8 @@ SSH Host key fingerprints are derived from files ending in `.pub` located in
 This policy relies on inventory_ssh_host_key_fingerprints being
 active. This policy is designed to run on a CFEngine Enterprise Hub.
 
+[[images/inventory_duplicate_ssh_host_key_fingerprint_dsa.jpg]]
+
 *** inventory_duplicate_ssh_host_key_fingerprints_data
 
 This policy will generate duplicate host key data that will be used for

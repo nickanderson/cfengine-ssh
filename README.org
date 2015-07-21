@@ -31,7 +31,7 @@ you may want to create a saved report for quick access.
 
 Here is an example of a SQL query to show duplicate DSA keys.
 
-#+beign_src sql
+#+begin_src sql
 SELECT sub.value as "SSH Host Fingerprint (DSA)",
         sub.hostkeys as "Host Identity"
 FROM (SELECT variablevalue as value,

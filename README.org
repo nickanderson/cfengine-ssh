@@ -28,7 +28,17 @@ you may want to create a saved report for quick access.
 Here is an example of a SQL query to show duplicate DSA keys.
 
 #+beign_src sql
+SELECT sub.value as "SSH Host Fingerprint (DSA)",
+        sub.hostkeys as "Host Identity"
+FROM (SELECT variablevalue as value,
+          array_agg(hostkey) as hostkeys,
+          count(*)
+     FROM variables
+     WHERE 'attribute_name=SSH Host Fingerprint (DSA)' = ANY(metatags) group by variablevalue )
+     AS sub where sub.count > 1 order by sub.count desc
 #+end_src
+
+[[images/inventory_duplicate_ssh_host_key_fingerprints_create_saved_reports.jpg]]
 
 *** Alerts
 You can setup alerts based on the inventoried duplicate ssh host keys.

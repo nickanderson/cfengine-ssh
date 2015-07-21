@@ -1,0 +1,48 @@
+bundle agent inventory_ssh_host_key_fingerprints
+{
+  vars:
+      "key_dir" string => "/etc/ssh";
+      "public_keys" slist => findfiles("$(key_dir)/*.pub");
+      "ssh_keygen" string => "/usr/bin/ssh-keygen";
+
+      # Get a canonified list of public keys so we can avoid errors
+      # and build proper variable associations
+      "c_public_key_map[$(public_keys)]" string => canonify( $(public_keys) );
+      "c_public_keys" slist => getvalues(c_public_key_map);
+
+       #Prototype: parsestringarray(array, input, comment, split, maxentries, maxbytes)
+      "$(c_public_keys)_dim"
+        int => parsestringarrayidx(
+                                 "$(c_public_key_map[$(public_keys)])_array",
+                                 execresult("$(ssh_keygen) -lf $(public_keys)", useshell),
+                                 "",
+                                 "\s",
+                                 "100",
+                                 "100");
+
+      "inventory_$(c_public_key_map[$(public_keys)])_type_fingerprint"
+        handle => "inventory_ssh_host_key_type_fingerprint",
+        string => "$($(c_public_key_map[$(public_keys)])_array[0][1])",
+        comment => "We want the ssh host key fingerprints to show up
+                    in mission portal as 'SSH Host Fingerprint (TYPE)'",
+        meta => { "inventory", "attribute_name=SSH Host Fingerprint $($(c_public_key_map[$(public_keys)])_array[0][3])" };
+
+      "inventory_$(c_public_key_map[$(public_keys)])_type"
+        handle => "inventory_ssh_host_key_type",
+        string => "$($(c_public_key_map[$(public_keys)])_array[0][3])",
+        comment => "We want the ssh host key fingerprints to show up
+                    in mission portal as 'SSH Host Key Types'",
+        meta => { "inventory", "attribute_name=SSH Host Key Types" };
+
+
+
+  reports:
+    DEBUG|DEBUG_inventory_ssh_host_key_fingerprints::
+      "DEBUG $(this.bundle): Found Public Key: '$(public_keys)'";
+      "DEBUG $(this.bundle): Key Bits: '$(public_keys)' = $($(c_public_key_map[$(public_keys)])_array[0][0])";
+      "DEBUG $(this.bundle): Key Fingerprint: '$(public_keys)' = $($(c_public_key_map[$(public_keys)])_array[0][1])";
+      "DEBUG $(this.bundle): Key Comment: '$(public_keys)' = $($(c_public_key_map[$(public_keys)])_array[0][2])";
+      "DEBUG $(this.bundle): Key Type: '$(public_keys)' = $($(c_public_key_map[$(public_keys)])_array[0][3])";
+      "DEBUG $(this.bundle): Inventory SSH Host Fingerprint $($(c_public_key_map[$(public_keys)])_array[0][3]) = $($(c_public_key_map[$(public_keys)])_array[0][1])";
+      "DEBUG $(this.bundle): Inventory SSH Host Key Type $($(c_public_key_map[$(public_keys)])_array[0][3])";
+}

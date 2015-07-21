@@ -1,0 +1,13 @@
+{ "query": "
+SELECT sub.value, 
+       sub.hostkeys 
+FROM   (SELECT v.variablevalue        AS value, 
+               Array_agg(h.ipaddress) AS hostkeys, 
+               Count(*) 
+        FROM   variables v, 
+               hosts h 
+        WHERE  'attribute_name=SSH Host Fingerprint (DSA)' = ANY ( v.metatags ) 
+               AND v.hostkey = h.hostkey 
+        GROUP  BY v.variablevalue) AS sub 
+WHERE  sub.count > 1 
+ORDER  BY sub.count DESC" }

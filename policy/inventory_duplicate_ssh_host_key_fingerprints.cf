@@ -1,0 +1,66 @@
+bundle agent inventory_duplicate_ssh_host_key_fingerprints
+{
+  methods:
+    policy_server::
+      "policy_hub"
+        usebundle => inventory_duplicate_ssh_host_key_fingerprints_data;
+
+      "policy_hub"
+        usebundle => inventory_duplicate_ssh_host_key_fingerprints_report;
+}
+
+bundle agent inventory_duplicate_ssh_host_key_fingerprints_data
+{
+  vars:
+    "key_types"
+      slist => { "DSA", "RSA", "RSA1" },
+      comment => "The types of keys that you want to search for duplicates";
+
+    "response_output_dir"
+      string => "/tmp",
+      comment => "We need a place to store the responses for each key type for
+                  later processing.";
+
+ files:
+
+   # We only want the policy server to generate the responses.
+   policy_server::
+
+    "$(this.promise_dirname)/../data/query_duplicate_ssh_host_fingerprint_$(key_types)_sha.json"
+      transformer => "$(paths.curl) -s -k --user admin:admin https://localhost/api/query \
+                      -X POST -d @$(this.promiser) \
+                      -o $(response_output_dir)/$(key_types).response.json",
+      comment => "Use the queries for the defined types to generate the
+                  duplicate key data for each key type";
+}
+
+bundle agent inventory_duplicate_ssh_host_key_fingerprints_report
+{
+  vars:
+    policy_server::
+
+      "key_types"
+        slist => { @(inventory_duplicate_ssh_host_key_fingerprints_data.key_types) };
+
+      "response_output_dir"
+        string => "$(inventory_duplicate_ssh_host_key_fingerprints_data.response_output_dir)";
+
+      "response_data_$(key_types)"
+        data => readjson("$(response_output_dir)/$(key_types).response.json", 1M),
+        ifvarclass => fileexists("$(response_output_dir)/$(key_types).response.json"),
+        comment => "Read in the data for each key type for inventory";
+
+      # Note: These are the indexes of the rows in the response
+      # The key and the hosts affected are inside this index at postiion 0 and 1 respectively
+      "duplicate_host_keys_$(key_types)"
+        slist => getindices("response_data_$(key_types)[data][0][rows]");
+
+      "duplicate_host_key_$(key_types)[$(duplicate_host_keys_$(key_types))]"
+        slist => getvalues("response_data_$(key_types)[data][0][rows][$(duplicate_host_keys_$(key_types))][1]"),
+        meta => { "inventory", "attribute_name=Duplicate SSH Host Keys ($(key_types))" };
+
+  reports:
+    DEBUG|DEBUG_inventory_duplicate_ssh_host_key_fingerprints_report::
+      "DEBUG $(this.bundle): Inventorying duplicate shh host keys based on data found in '$(response_output_dir)/$(key_types).response.json'";
+      "DEBUG $(this.bundle): Found duplicate $(key_types) ssh host key '$(response_data_$(key_types)[data][0][rows][$(duplicate_host_keys_$(key_types))][0])' on '$(response_data_$(key_types)[data][0][rows][$(duplicate_host_keys_$(key_types))][1])'";
+}

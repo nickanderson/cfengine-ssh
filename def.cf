@@ -1,0 +1,17 @@
+bundle common ssh_def
+{
+  vars:
+    "input[inventory_ssh_host_key_fingerprints]"
+      string => "$(this.promise_dirname)/policy/inventory_ssh_host_key_fingerprints.cf";
+
+    "input[inventory_duplicate_ssh_host_key_fingerprints]"
+      string => "$(this.promise_dirname)/policy/inventory_duplicate_ssh_host_key_fingerprints.cf";
+
+    any::
+      "inputs" slist => getvalues(input);
+}
+
+body file control
+{
+  inputs => { @(ssh_def.inputs) };
+}

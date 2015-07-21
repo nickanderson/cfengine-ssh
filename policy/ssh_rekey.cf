@@ -1,0 +1,27 @@
+bundle agent ssh_rekey
+{
+  vars:
+    "ssh_dir" string => "/etc/ssh";
+
+  files:
+    "$(ssh_dir)/."
+      depth_search => recurse("0"),
+      file_select => by_name(".*_key(.pub)?"),
+      delete => tidy,
+      classes => scoped_classes_generic("bundle", "ssh_host_key");
+
+    #"$(ssh_dir)/*_key.pub"
+    #  delete => tidy,
+    #  classes => scoped_classes_generic("bundle", "ssh_host_key");
+
+
+    ssh_host_key_repaired::
+      "$(ssh_dir)/SSH_HOST_KEY_REGENERATED"
+        edit_line => insert_lines("$(sys.date)"),
+        create => "true";
+
+  services:
+    ssh_host_key_repaired::
+      "sshd"
+        service_policy => "restart";
+}

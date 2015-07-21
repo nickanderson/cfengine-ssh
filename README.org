@@ -47,6 +47,8 @@ FROM (SELECT variablevalue as value,
 *** Alerts
 You can setup alerts based on the inventoried duplicate ssh host keys.
 
+[[images/dashboard_widget_duplicate_ssh_host_key.jpg]]
+
 1) Create a new widget named "Duplicate SSH Host Key"
    [[images/inventory_duplicate_ssh_host_key_fingerprints_create_dashboard_widget.jpg]]
 

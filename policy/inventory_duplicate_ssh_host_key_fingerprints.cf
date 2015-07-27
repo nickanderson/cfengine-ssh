@@ -1,6 +1,7 @@
 bundle agent inventory_duplicate_ssh_host_key_fingerprints
 {
   methods:
+    policy_server::
       "policy_hub"
         usebundle => inventory_duplicate_ssh_host_key_fingerprints_data;
 
@@ -22,6 +23,9 @@ bundle agent inventory_duplicate_ssh_host_key_fingerprints_data
 
  files:
 
+   # We only want the policy server to generate the responses.
+   policy_server::
+
     "$(this.promise_dirname)/../data/query_duplicate_ssh_host_fingerprint_$(key_types)_sha.json"
       transformer => "$(paths.curl) -s -k --user admin:admin https://localhost/api/query \
                       -X POST -d @$(this.promiser) \
@@ -33,6 +37,8 @@ bundle agent inventory_duplicate_ssh_host_key_fingerprints_data
 bundle agent inventory_duplicate_ssh_host_key_fingerprints_report
 {
   vars:
+    policy_server::
+
       "key_types"
         slist => { @(inventory_duplicate_ssh_host_key_fingerprints_data.key_types) };
 

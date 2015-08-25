@@ -61,3 +61,54 @@ You can setup alerts based on the inventoried duplicate ssh host keys.
    c) Set the match to "contains" (because its a list) with "%" as the value (to match anything)
 
    [[images/inventory_duplicate_ssh_host_key_fingerprints_create_condition.jpg]]
+
+** How to integrate into your policy
+First get the policy into your masterfiles
+
+#+begin_src sh
+  cd /tmp
+  export MASTERFILES=/var/cfengine/masterfiles
+  git clone https://github.com/nickanderson/cfengine-ssh.git
+  cd cfengine-ssh
+  mkdir -p $MASTERFILES/services/ssh
+  git archive master | tar -x -C $MASTERFILES/services/ssh
+#+end_src
+
+Include def.cf into your inputs
+
+#+begin_src cfengine
+  body common control
+  {
+        inputs => { 
+                    # Reports
+                    @(cfengine_reports.inputs),
+  
+                   "services/ssh/def.cf",
+                    
+                    # autorun system
+                    @(services_autorun.inputs),
+        };
+  }
+#+end_src
+
+Activate the features you want in the proper context.
+
+For example to activate `inventory_ssh_host_key_fingerprints` on all non
+windows servers and to enable `inventory_duplicate_ssh_host_key_fingerprints` on an Enterprise hub:
+
+#+begin_src cfengine
+  bundle agent main
+  # User Defined Service Catalogue
+  {
+    methods:
+      # Activate your custom policies here
+      !windows::
+        "Inventory SSH Host Key Fingerprints" -> { "security" }
+          usebundle => inventory_ssh_host_key_fingerprints;
+
+      enterprise_edition.policy_server::
+        "Inventory Duplicate SSH Host Key Fingerprints"
+          usebundle => inventory_duplicate_ssh_host_key_fingerprints;
+  }
+#+end_src
+

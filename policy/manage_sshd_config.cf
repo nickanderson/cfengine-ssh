@@ -1,0 +1,120 @@
+bundle agent manage_sshd_config(config_file, template_file, config_data)
+# @brief Mange sshd_config using config_data. NOTE: this bundle is opinionated
+# and promises that sshd will be re-started if the configuration is changed.
+# This means that if sshd is not running, but its configuration is changed, it
+# will be started. This restart behavior can be disabled by defining the class
+# _sshd_config_norestart. Note that the configuration file will only be updated
+# if it passes sshd test validation.
+# @param config_file Path to the sshd configuration file (typically /etc/ssh/sshd_config)
+# @param template_file Path to the mustache template used to render sshd_config
+# @param config_data A data structure that maps to sshd_config.
+#
+# **Example:**
+#
+# ```cf3
+# bundle agent sshd
+# {
+#
+#   vars:
+#
+#       "defaults"
+#         data => readjson("$(this.promise_dirname)/../data/sshd_defaults.json", inf),
+#         comment => "The baseline settings for all sshd configs. These defaults
+#                     may be overridden with service specific configs below.";
+#
+#       "config" data => mergedata( @(defaults) );
+#
+#       "sshd_config"
+#         string => "/etc/ssh/sshd_config",
+#         comment => "The sshd configuration file to manage.";
+#
+#
+#     # Environment specific overrides
+#     support_upload::
+#
+#       "config" data => mergedata(
+#                                   @(defaults),
+#                                   "@(def.sshd_config[data])",
+#                                   @(support_upload.config)
+#                                 );
+#
+#   methods:
+#
+#       "Manage SSHD" -> { "support_upload", "support@cfengine.com" }
+#         usebundle => manage_sshd_config( "$(c)", "$(this.promise_dirname)/../templates/sshd.mustache", @(config) ),
+#         inherit => "true";
+# }
+# ```
+{
+  vars:
+      "sshd_config" string => "$(config_file)";
+      "staged_sshd_config" string => "$(config_file).staged";
+
+      "sshd"
+        string => "/usr/sbin/sshd";
+
+      "sshd_check"
+        string => "$(sshd) -t -f $(staged_sshd_config)",
+        if => fileexists( $(sshd) ),
+        comment => "We only check the staged config since we only copy to the
+                    final config file if the staged config is valid";
+
+  files:
+
+      # To protect against mis-configuration that may prevent the service from
+      # starting we first render the config to a staging location so that it can
+      # be validated before deployment.
+
+      "$(staged_sshd_config)"
+        create => "true",
+        handle => "$(this.promise_filename)_$(this.promise_bundle)_files_render_staged",
+        edit_template => "$(template_file)",
+        template_method => "mustache",
+        template_data => @(config_data),
+        perms => mog(640, root, root),
+        classes => results("bundle", "_staged_sshd_config" ),
+        comment => "It's important to validate the configuration is valid so
+                    that the service does not get accidentally broken because of
+                    incomplete or broken configuration.";
+
+  classes:
+
+      # If the staged config has been updated, and none of its
+      # compound/compressed promises were not-kept. For example, if the file is
+      # created, but fails to render it might be both repaired and not_kept at
+      # the same time.
+
+      "_staged_config_valid"
+        expression => returnszero( $(sshd_check), noshell ),
+        depends_on => { "$(this.promise_filename)_$(this.promise_bundle)_files_render_staged" },
+        comment => "This only makes sense to check after having promised the staged file.";
+
+  files:
+
+    _staged_config_valid::
+
+      "$(sshd_config)"
+        copy_from => local_dcp( "$(staged_sshd_config)" ),
+        classes => results("bundle", "_sshd_config" ),
+        perms => mog(640, root, root),
+        comment => "The config file should have the most recent data if it has
+                    been validated.";
+
+  services:
+
+    _sshd_config_repaired.!_sshd_config_norestart::
+
+      "sshd"
+        service_policy => "restart",
+        comment => "In order to pick up configuration changes the service needs
+                    to be restarted.";
+  reports:
+
+    DEBUG::
+
+      "Staged Config:"
+        printfile => cat("$(staged_sshd_config)");
+
+      "Final Config:"
+        printfile => cat( $(sshd_config) );
+}

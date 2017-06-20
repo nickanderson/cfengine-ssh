@@ -1,12 +1,83 @@
 * SSH Related Policy
 
 ** inventory_ssh_host_key_fingerprints
-This policy will inventory ssh host key fingerprints that are found on the system.
+This policy will inventory ssh host key fingerprints that are found on the
+system.
 
 SSH Host key fingerprints are derived from files ending in `.pub` located in
 `/etc/ssh`.
 
 [[images/inventory_ssh_host_key_fingerprint_dsa.jpg]]
+** manage_sshd_config
+Mange the sshd config file.
+
+*NOTE:* This bundle is opinionated and promises that sshd will be re-started if
+the configuration is changed. This means that if sshd is not running, but its
+configuration is changed, it will be started. This restart behavior can be
+disabled by defining the class =_sshd_config_norestart=
+
+*** Parameters
+- =config_file= :: Full path to the =sshd_config= file (e.g.
+     =/etc/ssh/sshd_config=).
+
+- =template_file= :: Full path to the mustache template. See
+     [[file:templates/sshd_config.mustache]].
+
+- =config_data= :: A data structure that maps to =sshd_config=. See
+     [[file:./data/sshd_config_defaults.json]].
+
+***  Example Usage
+
+This example shows how defaults can be overridden.
+
+#+BEGIN_SRC cfengine3
+  bundle agent main
+  {
+          "defaults"
+            data => readjson("$(this.promise_dirname)/../data/sshd_example.json", inf),
+            comment => "The baseline settings for all sshd configs. These defaults
+                        may be overridden with service specific configs below.";
+
+          # NOTE: It would be possible to have mandatory settings by merging those
+          # last.
+
+          "config" data => mergedata(
+                                      @(defaults),
+                                      "@(def.sshd_config[data])",
+                                    );
+
+          # Should this be user configurable? Well it makes it easier to test. I
+          # could take the value from def, then it is overrideable easily in
+          # def.json which could also work for testing.
+
+          "c"
+            string => "$(this.promise_dirname)/../sshdconfig.txt",
+            comment => "The sshd configuration file to manage.";
+
+      methods:
+
+          "Manage SSHD" -> { "support_upload", "support@cfengine.com" }
+            usebundle => manage_sshd_config( "$(c)", "$(this.promise_dirname)/../templates/sshd.mustache", @(config) ),
+            inherit => "true";
+  }
+#+END_SRC
+
+# You can easily define data via the augments file and pick it out:
+# mergedata with "@(def.sshd_config[data])"
+#+begin_src json
+#      {
+#        "vars":{
+#                 "sshd_config": {
+#                                  "data": {
+#                                            "Port": 7777
+#                                  }
+#                 }
+#        }
+#      }
+#+end_src
+
+
+
 
 ** inventory_duplicate_ssh_host_key_fingerprints
 This policy relies on inventory_ssh_host_key_fingerprints being

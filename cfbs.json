@@ -6,9 +6,10 @@
     "inventory-ssh-host-key-fingerprints": {
       "description": "This module contains policy to inventory the ssh host key fingerprints.",
       "tags": ["inventory", "ssh", "security"],
-      "subdirectory": "policy/",
+      "version": "0.0.1",
+      "subdirectory": "policy/inventory/host-key-fingerprints/",
       "steps": [
-        "copy ./inventory_ssh_host_key_fingerprints.cf services/ssh/inventory/host_key_fingerprints/inventory_ssh_host_key_fingerprints.cf",
+        "copy ./inventory-ssh-host-key-fingerprints.cf services/ssh/inventory/host-key-fingerprints/inventory-ssh-host-key-fingerprints.cf",
         "json inventory/host-key-fingerprints/def.json def.json"
       ]
     }

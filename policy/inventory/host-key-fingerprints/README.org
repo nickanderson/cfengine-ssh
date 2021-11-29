@@ -1,0 +1,13 @@
+#+title: inventory-ssh-host-key-fingerprints
+
+* Inventory                                                          :ATTACH:
+:PROPERTIES:
+:ID:       7605fa5a-2f99-4123-8b1f-b9d0c48a2505
+:END:
+
+- SSH Host Key Files :: The host key files inventoried
+- SSH Host Key Types :: The types of ssh host keys found
+- SSH Host Fingerprint =<TYPE>= :: Fingerprints for =<TYPE>= of ssh host key
+
+[[./data/76/05fa5a-2f99-4123-8b1f-b9d0c48a2505/2021-11-29_13-53-06_2021-11-29_13-52-50.png]]
+

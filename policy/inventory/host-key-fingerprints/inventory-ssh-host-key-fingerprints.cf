@@ -1,0 +1,50 @@
+bundle agent inventory_ssh_host_key_fingerprints
+#@ brief Inventory ssh host key fingerprints and types
+#@ inventory SSH Host Key Files - The host key files inventoried
+#@ inventory SSH Host Key Types - The types of ssh host keys found
+#@ inventory SSH Host Fingerprint <TYPE> - Fingerprints for <TYPE> of ssh host key
+{
+  vars:
+      # Directory in which to search for public host keys
+      "_key_dir" string => "/etc/ssh";
+
+      # The public keys found
+      "_public_keys"
+         slist => sort( findfiles("$(_key_dir)/*.pub"), lex );
+
+      "_c_public_key[$(_public_keys)]" string => canonify( $(_public_keys) );
+
+      # The path to ssh-keygen
+      "_ssh_keygen" string => "/usr/bin/ssh-keygen";
+
+      # Parse the output of ssh-keygen -l into a variable for each key
+      "_pkey_data_$(with)"
+        data => data_regextract(
+                                 "^(?<bits>\d+)\s(?<fingerprint>\w+:[^\s]*)\s(?<comment>[^(]*)\((?<type>[^)]*)\)$",
+                                 execresult("$(_ssh_keygen) -lf $(_public_keys)", useshell)),
+        with => canonify( $(_public_keys) );
+
+      # # Merge all the key data into a single variable that can be iterated
+      # "_pkey_vars_data"
+      #   data => variablesmatching_as_data( "$(this.namespace):$(this.bundle)\._pkey_data_.*" );
+
+      # # A list for iterating over public key data
+      # "_pkey_vars_data_i" slist => getindices( _pkey_vars_data );
+
+      # Inventory the fingerprint of each key type
+      "inventory_key[$(_public_keys)]"
+        string => "$(_public_keys)",
+        meta => { "inventory", "attribute_name=SSH Host Key Files" };
+
+      "inventory_fingerprint[$(_public_keys)]"
+        handle => "inventory_ssh_host_key_type_fingerprint",
+        string => "$(_pkey_data_$(_c_public_key[$(_public_keys)])[fingerprint])",
+        meta => { "inventory", "attribute_name=SSH Host Fingerprint $(_pkey_data_$(_c_public_key[$(_public_keys)])[type])" };
+
+      # Inventory the types of public keys found
+      "inventory_type[$(_public_keys)]"
+        handle => "inventory_ssh_host_key_type",
+        string => "$(_pkey_data_$(_c_public_key[$(_public_keys)])[type])",
+        meta => { "inventory", "attribute_name=SSH Host Key Types" };
+
+}

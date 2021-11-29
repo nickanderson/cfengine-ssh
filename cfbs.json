@@ -1,0 +1,16 @@
+{
+    "name": "CFEngine SSH Policy",
+    "type": "module-repo",
+    "description": "This repo provides inventory and management modules related to SSH",
+    "provides": {
+        "inventory-ssh-host-key-fingerprints": {
+            "description": "This module contains policy to inventory the ssh host key fingerprints.",
+            "tags": ["inventory", "ssh", "security"],
+            "subdirectory": "policy/",
+            "steps": [
+                "copy ./inventory_ssh_host_key_fingerprints.cf services/ssh/inventory/host_key_fingerprints/inventory_ssh_host_key_fingerprints.cf",
+                "json inventory/host-key-fingerprints/def.json"
+            ]
+        }
+    }
+}

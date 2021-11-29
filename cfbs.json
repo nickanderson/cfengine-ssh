@@ -10,7 +10,7 @@
       "subdirectory": "policy/inventory/host-key-fingerprints/",
       "steps": [
         "copy ./inventory-ssh-host-key-fingerprints.cf services/ssh/inventory/host-key-fingerprints/inventory-ssh-host-key-fingerprints.cf",
-        "json inventory/host-key-fingerprints/def.json def.json"
+        "json inventory/host-key-fingerprints/cfbs/def.json def.json"
       ]
     }
   }

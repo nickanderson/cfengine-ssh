@@ -2,5 +2,5 @@
     "vars": {
         "control_common_bundlesequence_classification": ["default:inventory_ssh_host_key_fingerprints"]
     },
-    "inputs": ["services/ssh/inventory/host_key_fingerprints/inventory_ssh_host_key_fingerprints.cf"]
+    "inputs": ["services/ssh/inventory/host-key-fingerprints/inventory-ssh-host-key-fingerprints.cf"]
 }

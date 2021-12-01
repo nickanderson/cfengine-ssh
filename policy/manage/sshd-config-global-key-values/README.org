@@ -1,0 +1,21 @@
+#+title: manage-sshd-config-global-key-values
+
+Manage individual key values in the /global/ sshd config.
+
+*Notes:*
+- If there is a Match block the policy will skip configuration and emit a report on stdout indicating a match block was found and configuration was skipped.
+- If the configuration is repaired, the service is restarted.
+
+#+caption: Example Usage
+#+begin_src cfengine3 :include-stdlib t :log-level info :exports both
+ bundle agent example
+ {
+   vars:
+       "sshd_config[PermitRootLogin]" string => "no";
+
+   methods:
+       "SSHD Config"
+         usebundle => sshd_config_global_key_values( "$(this.namespace):$(this.bundle).sshd_config" );
+ }
+#+end_src
+

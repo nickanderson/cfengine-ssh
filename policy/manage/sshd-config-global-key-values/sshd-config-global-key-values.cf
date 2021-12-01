@@ -1,0 +1,80 @@
+bundle agent sshd_config_global_key_values(config_map_var)
+#@ brief Manage individual key values in sshd config
+#@ param config_map_var - fully qualified name of variable holding desired configuration map (namespace:bundle.variable)
+#@
+#@ **Notes:**
+#@ - This bundle does not currently support sshd config files that contain Match
+#@   blocks. If a Match block is active, this bundle will not edit the file.
+#@
+#@ **Example Usage:**
+#@
+#@ bundle agent example
+#@ {
+#@
+#@   vars:
+#@       "sshd_config[PermitRootLogin]" string => "no";
+#@
+#@   methods:
+#@       "SSHD Config"
+#@         usebundle => sshd_config_global_key_values( "$(this.namespace):$(this.bundle).sshd_config" );
+#@ }
+#@
+{
+  vars:
+      "_config_file"        string => "/etc/ssh/sshd_config";
+      "_staged_config_file" string => "$(_config_file).staged";
+      "_sshd_path"          string => "/usr/sbin/sshd";
+      "_sshd_service_name"  string => "sshd";
+
+      "_sshd_check_command"
+        string => "$(_sshd_path) -t -f $(_staged_config_file)",
+        comment => concat( "In order to avoid breaking the service in the event",
+                           " of an invalid config change we test the staged",
+                           " configuration before placing the final configuration.");
+  classes:
+
+      # TODO custom edit_line bundle that edits only before any existing Match block
+      # - use select_region and or location bodies
+      "found_active_match_block"
+        expression => regline( "^\s?Match\s+.*", $(_config_file) );
+
+  files:
+    !found_active_match_block::
+
+      # The staged configuration needs to first be primed from the existing config
+      "$(_staged_config_file)"
+        handle => "prime_staged_config_$(this.namespace)_$(this.bundle)_$(config_map_var)",
+        copy_from => default:local_dcp( "$(_config_file)");
+
+      # We promise the staged config given the data
+      "$(_staged_config_file)"
+        edit_line => default:set_line_based( "$(config_map_var)",
+                                     " ",
+                                     "\s+",
+                                     ".*",
+                                     "\s*#\s*"),
+        classes => default:results( "bundle", "staged_config" ),
+        handle => "staged_config_$(this.namespace)_$(this.bundle)_$(config_map_var)";
+
+    !found_active_match_block.staged_config_repaired::
+
+      # If the staged config was repaired after priming and that config is
+      # valid, then we promise the actual configuration file
+
+      "$(_config_file)"
+        copy_from => default:local_dcp( "$(_staged_config_file)" ),
+        classes => default:results( "bundle", "config_file" ),
+        perms => default:mog(640, root, root),
+        handle => "config_$(this.namespace)_$(this.bundle)_$(config_map_var)";
+
+  services:
+    !found_active_match_block.config_file_repaired::
+      "$(_sshd_service_name)"
+        service_policy => "restart",
+        handle => "restart_after_config_change_$(this.namespace)_$(this.bundle)_$(config_map_var)";
+
+  reports:
+      found_active_match_block::
+        "Match block found in $(_config_file), skipped promises in $(this.bundle) for safety";
+}
+

@@ -1,4 +1,9 @@
-bundle agent sshd_config_global_key_values(config_map_var)
+body file control
+{
+  namespace => "lib_sshd_config";
+}
+
+bundle agent global_key_values(config_map_var)
 #@ brief Manage individual key values in sshd config
 #@ param config_map_var - fully qualified name of variable holding desired configuration map (namespace:bundle.variable)
 #@
@@ -16,7 +21,7 @@ bundle agent sshd_config_global_key_values(config_map_var)
 #@
 #@   methods:
 #@       "SSHD Config"
-#@         usebundle => sshd_config_global_key_values( "$(this.namespace):$(this.bundle).sshd_config" );
+#@         usebundle => lib_sshd_config:global_key_values( "$(this.namespace):$(this.bundle).sshd_config" );
 #@ }
 #@
 {

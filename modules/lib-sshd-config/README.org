@@ -12,7 +12,7 @@ Manage individual key values in the /global/ sshd config.
 
 #+caption: Example Usage
 #+begin_src cfengine3 :include-stdlib t :log-level info :exports both
- bundle agent example
+ bundle agent example_sshd_PermitRootLogin_no
  {
    vars:
        "sshd_config[PermitRootLogin]" string => "no";

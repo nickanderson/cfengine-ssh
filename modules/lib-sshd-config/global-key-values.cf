@@ -13,7 +13,7 @@ bundle agent global_key_values(config_map_var)
 #@
 #@ **Example Usage:**
 #@
-#@ bundle agent example
+#@ bundle agent example_sshd_PermitRootLogin_no
 #@ {
 #@
 #@   vars:

@@ -1,4 +1,4 @@
-#+title: lib-sshd-config
+#+title: library-sshd-config
 
 This module provides policy for managing ~sshd~.
 

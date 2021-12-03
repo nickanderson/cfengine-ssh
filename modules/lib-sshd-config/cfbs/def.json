@@ -1,5 +1,0 @@
-{
-  "inputs": [
-    "services/lib-sshd-config/global-key-values.cf"
-  ]
-}

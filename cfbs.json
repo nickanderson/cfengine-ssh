@@ -13,13 +13,13 @@
         "json cfbs/def.json def.json"
       ]
     },
-    "lib-sshd-config": {
+    "library-sshd-config": {
       "description": "This module provides policy for managing sshd configuration.",
       "tags": ["library", "ssh", "security"],
       "version": "0.0.1",
-      "subdirectory": "modules/lib-sshd-config/",
+      "subdirectory": "modules/library-sshd-config/",
       "steps": [
-        "copy ./global-key-values.cf services/lib-sshd-config/",
+        "copy ./global-key-values.cf services/library-sshd-config/",
         "json cfbs/def.json def.json"
       ]
     }
